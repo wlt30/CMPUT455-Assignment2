@@ -59,7 +59,7 @@ class SimpleGoBoard(object):
         assert 2 <= size <= MAXSIZE
         self.reset(size)
 
-    def reset(self, size):
+    def reset(self, size, timelimit=1):
         """
         Creates a start state, an empty board with the given size
         The board is stored as a one-dimensional array

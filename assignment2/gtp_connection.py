@@ -35,6 +35,7 @@ class GtpConnection():
             "name": self.name_cmd,
             "boardsize": self.boardsize_cmd,
             "showboard": self.showboard_cmd,
+            "timelimit": self.timelimit_cmd,
             "clear_board": self.clear_board_cmd,
             "komi": self.komi_cmd,
             "version": self.version_cmd,
@@ -57,6 +58,7 @@ class GtpConnection():
         #          error message on argnum failure)
         self.argmap = {
             "boardsize": (1, 'Usage: boardsize INT'),
+            "timelimit": (1, 'Usage: timelimit INT (1-100)'),
             "komi": (1, 'Usage: komi FLOAT'),
             "known_command": (1, 'Usage: known_command CMD_NAME'),
             "genmove": (1, 'Usage: genmove {w,b}'),
@@ -174,6 +176,16 @@ class GtpConnection():
         """
         self.reset(int(args[0]))
         self.respond()
+
+    def timelimit_cmd(self, args):
+        """
+        Set a timelimit for genmove or solve to use. Default 1 second.
+        """
+        if (not isinstance(args,int) or args[0]<1 or args[0]>100):
+            self.error('Invalid timelimit argument provided')
+        else:
+            
+            self.respond()
 
     def showboard_cmd(self, args):
         self.respond('\n' + self.board2d())
