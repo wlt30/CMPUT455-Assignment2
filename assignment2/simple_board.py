@@ -52,7 +52,7 @@ class SimpleGoBoard(object):
         """
         return where1d(self.board == EMPTY)
 
-    def __init__(self, size):
+    def __init__(self, size, timelimit=1):
         """
         Creates a Go board of given size
         """
@@ -66,6 +66,8 @@ class SimpleGoBoard(object):
         See GoBoardUtil.coord_to_point for explanations of the array encoding
         """
         self.size = size
+        self.timelimit = timelimit
+        self.global_time = None
         self.NS = size + 1
         self.WE = 1
         self.ko_recapture = None

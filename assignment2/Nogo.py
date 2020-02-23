@@ -16,7 +16,6 @@ class Nogo():
         """
         self.name = "NoGoAssignment2"
         self.version = 1.0
-        self.timelimit = 1
         
     def get_move(self, board, color):
         return GoBoardUtil.generate_random_move(board, color, False)

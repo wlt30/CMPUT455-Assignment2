@@ -12,6 +12,7 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS, \
                        MAXSIZE, coord_to_point
 import numpy as np
 import re
+import time
 
 class GtpConnection():
 
@@ -43,6 +44,7 @@ class GtpConnection():
             "genmove": self.genmove_cmd,
             "list_commands": self.list_commands_cmd,
             "play": self.play_cmd,
+            "solve": self.solve_cmd,
             "legal_moves": self.legal_moves_cmd,
             "gogui-rules_game_id": self.gogui_rules_game_id_cmd,
             "gogui-rules_board_size": self.gogui_rules_board_size_cmd,
@@ -184,8 +186,25 @@ class GtpConnection():
         if (not isinstance(args,int) or args[0]<1 or args[0]>100):
             self.error('Invalid timelimit argument provided')
         else:
-            
+            self.reset(self.board.size, args[0])
             self.respond()
+
+    def solve_cmd(self, args):
+        self.board.global_time = None
+        return solve(args)
+
+    def solve(self, args):
+        """
+        Attempts to compute the winner of the current position, assuming perfect play by both, within the current time limit.
+        """
+        ans = "unknown"
+        if not self.board.global_time:
+            self.board.global_time = time.process_time()
+        elif self.board.global_time < time.process_time() - self.board.timelimit:
+            return False
+        # logic here for solving game
+        return solve(args)
+
 
     def showboard_cmd(self, args):
         self.respond('\n' + self.board2d())
@@ -259,16 +278,19 @@ class GtpConnection():
         """
         Generate a move for the color args[0] in {'b', 'w'}, for the game of gomoku.
         """
-        board_color = args[0].lower()
-        color = color_to_int(board_color)
-        move = self.go_engine.get_move(self.board, color)
-        move_coord = point_to_coord(move, self.board.size)
-        move_as_string = format_point(move_coord)
-        if self.board.is_legal(move, color):
-            self.board.play_move(move, color)
-            self.respond(move_as_string)
-        else:
-            self.respond("resign")
+        self.board.global_time = None
+        move = self.solve()
+        if not move:
+            board_color = args[0].lower()
+            color = color_to_int(board_color)
+            move = self.go_engine.get_move(self.board, color)
+            move_coord = point_to_coord(move, self.board.size)
+            move_as_string = format_point(move_coord)
+            if self.board.is_legal(move, color):
+                self.board.play_move(move, color)
+                self.respond(move_as_string)
+            else:
+                self.respond("resign")
 
     def gogui_rules_game_id_cmd(self, args):
         self.respond("NoGo")
