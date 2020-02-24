@@ -82,10 +82,10 @@ class GtpConnection():
         Start a GTP connection.
         This function continuously monitors standard input for commands.
         """
-        with open("test1.txt", "r") as f:
-            for line in f.read().split("\n"):
-                self.get_cmd(line)
-        return
+        # with open("test1.txt", "r") as f:
+        #     for line in f.read().split("\n"):
+        #         self.get_cmd(line)
+        # return
         line = stdin.readline()
         while line:
             self.get_cmd(line)
