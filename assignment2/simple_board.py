@@ -15,6 +15,11 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
                        MAXSIZE, NULLPOINT
 
 class SimpleGoBoard(object):
+    def __hash__(self):
+        return self.base3int
+    def __eq__(self, other):
+        return self.base3int == other.base3int
+
     def __str__(self):
         return str(GoBoardUtil.get_twoD_board(self))
 
@@ -42,10 +47,7 @@ class SimpleGoBoard(object):
         """
         Did move on point capture something?
         """
-        for nb in self.neighbors_of_color(point, opp_color):
-            if self._detect_capture(nb):
-                return True
-        return False
+        return any(self._detect_capture(nb) for nb in self.neighbors_of_color(point, opp_color))
 
     def get_empty_points(self):
         """
@@ -68,6 +70,7 @@ class SimpleGoBoard(object):
         See GoBoardUtil.coord_to_point for explanations of the array encoding
         """
         self.size = size
+        self.base3int = 0
         self.NS = size + 1
         self.WE = 1
         self.ko_recapture = None
@@ -86,6 +89,7 @@ class SimpleGoBoard(object):
         b.current_player = self.current_player
         assert b.maxpoint == self.maxpoint
         b.board = np.copy(self.board)
+        b.base3int = self.base3int
         return b
 
     def row_start(self, row):
@@ -270,12 +274,10 @@ class SimpleGoBoard(object):
 
     def neighbors_of_color(self, point, color):
         """ List of neighbors of point of given color """
-        nbc = []
         for nb in self.neighbors[point]:
             if self.get_color(nb) == color:
-                nbc.append(nb)
-        return nbc
-        
+                yield nb
+
     def find_neighbor_of_color(self, point, color):
         """ Return one neighbor of point of given color, or None """
         for nb in self.neighbors[point]:
