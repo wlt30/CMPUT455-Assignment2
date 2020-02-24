@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 profile*
 test1.txt
+*.out.html
