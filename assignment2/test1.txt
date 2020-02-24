@@ -1,7 +1,7 @@
+#test 90, 100, 110 are hard
 boardsize 4
 clear_board
-timelimit 50
+timelimit 20
 play b a4
-play w a2
-70 solve
-#?[b a1|b b3|b b2|b b1|b c3|b c2|b c1]
+90 solve
+#?[unknown]
