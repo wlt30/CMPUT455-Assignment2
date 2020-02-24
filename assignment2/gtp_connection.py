@@ -195,6 +195,7 @@ class GtpConnection():
             self.error('Invalid timelimit argument provided')
         else:
             self.time_limit = time_limit
+        self.respond()
 
     def solve_cmd(self, args, p=1):
         color = self.board.current_player
@@ -289,7 +290,7 @@ class GtpConnection():
             else:
                 self.debug_msg("Move: {}\nBoard:\n{}\n".
                                 format(board_move, self.board2d()))
-            # self.respond()
+            self.respond()
         except Exception as e:
             self.respond('illegal move: \"{} {}\" {}'.format(args[0], args[1], str(e)))
 
