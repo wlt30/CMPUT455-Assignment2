@@ -15,6 +15,8 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
                        MAXSIZE, NULLPOINT
 
 class SimpleGoBoard(object):
+    def __str__(self):
+        return str(GoBoardUtil.get_twoD_board(self))
 
     def get_color(self, point):
         return self.board[point]
@@ -59,15 +61,13 @@ class SimpleGoBoard(object):
         assert 2 <= size <= MAXSIZE
         self.reset(size)
 
-    def reset(self, size, timelimit=1):
+    def reset(self, size):
         """
         Creates a start state, an empty board with the given size
         The board is stored as a one-dimensional array
         See GoBoardUtil.coord_to_point for explanations of the array encoding
         """
         self.size = size
-        self.timelimit = timelimit
-        self.global_time = None
         self.NS = size + 1
         self.WE = 1
         self.ko_recapture = None
@@ -251,17 +251,18 @@ class SimpleGoBoard(object):
         self.board[point] = color
         single_captures = []
         neighbors = self.neighbors[point]
-        for nb in neighbors:
-            if self.board[nb] == opp_color:
-                single_capture = self._detect_and_process_capture(nb)
-                if single_capture == True:
-                    raise ValueError("capture")
+        # for nb in neighbors:
+        #     if self.board[nb] == opp_color:
+        #         single_capture = self._detect_and_process_capture(nb)
+        #         if single_capture == True:
+        #             raise ValueError("capture")
         if not self._stone_has_liberty(point):
             # check suicide of whole block
             block = self._block_of(point)
             if not self._has_liberty(block): # undo suicide move
                 self.board[point] = EMPTY
-                raise ValueError("suicide")
+                # raise ValueError("suicide")
+                return False
         self.ko_recapture = None
         if in_enemy_eye and len(single_captures) == 1:
             self.ko_recapture = single_captures[0]

@@ -81,6 +81,10 @@ class GtpConnection():
         Start a GTP connection.
         This function continuously monitors standard input for commands.
         """
+        with open("test1.txt", "r") as f:
+            self.get_cmd(f.readline())
+            self.get_cmd(f.readline())
+            self.get_cmd(f.readline())
         line = stdin.readline()
         while line:
             self.get_cmd(line)
@@ -185,26 +189,40 @@ class GtpConnection():
         """
         Set a timelimit for genmove or solve to use. Default 1 second.
         """
-        if (not isinstance(args,int) or args[0]<1 or args[0]>100):
+        time_limit = int(args[0])
+        if (time_limit<1 or time_limit>100):
             self.error('Invalid timelimit argument provided')
         else:
-            self.reset(self.board.size, args[0])
-            self.respond()
+            self.time_limit = time_limit
+
 
     def solve_cmd(self, args):
         color = color_to_int(args[0])
-        parent_pipe, child_pipe = multiprocessing.Pipe(False)
+        parent_pipe, child_pipe = multiprocessing.Pipe(True)
+        
+        from pdb import set_trace as st; st(); mcts.solve(self.board, color, child_pipe)
         proc = multiprocessing.Process(target=mcts.solve, args=(self.board, color, child_pipe))
         proc.start()
-        proc.join(self.board.timelimit)
-        try:
+        # print("Log: time_limit = ",self.time_limit)
+        # proc.join(self.time_limit)
+        # try:
+        #     proc.terminate()
+        # except Exception as e:
+        #     print(e)
+        #     pass
+        proc.join(self.time_limit)
+        res = proc.exitcode
+        print("res = ", res)
+        if not res:
+            move = parent_pipe.recv()
+            if move:
+                self.respond("{} {}".format(color, move))
+            else:
+                self.respond("{}".format(get_opponent_color(color)))
+        else:
             proc.terminate()
-        except:
-            pass
-        try:
-            return parent_pipe.recv()
-        except:
-            return False
+            # process timed out
+            self.respond("unknown")
 
     def showboard_cmd(self, args):
         self.respond('\n' + self.board2d())
@@ -285,9 +303,11 @@ class GtpConnection():
             move_as_string = format_point(move_coord)
             if self.board.is_legal(move, color):
                 self.board.play_move(move, color)
-                self.respond(move_as_string)
-            else:
-                self.respond("resign")
+            #     self.respond(move_as_string)
+            # else:
+            #     self.respond("resign")
+        else:
+            self.board.play_move(result, color)
 
     def gogui_rules_game_id_cmd(self, args):
         self.respond("NoGo")
@@ -427,3 +447,8 @@ def color_to_int(c):
                     "B": BLACK , "W": WHITE, "E": EMPTY,
                     "BORDER": BORDER}
     return color_to_int[c]
+
+def get_opponent_color(c:int):
+    return 3-c
+    """get opponent color"""
+    
