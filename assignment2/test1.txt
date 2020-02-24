@@ -1,7 +1,0 @@
-#test 90, 100, 110 are hard
-boardsize 4
-clear_board
-timelimit 20
-play b a4
-90 solve
-#?[unknown]
