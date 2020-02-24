@@ -3,8 +3,5 @@ clear_board
 timelimit 50
 play b a4
 play w a2
-play b d1
-play w d2
-play b d3
-30 solve
-#?[w b1|w b2|w c1]
+70 solve
+#?[b a1|b b3|b b2|b b1|b c3|b c2|b c1]
