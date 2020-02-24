@@ -12,9 +12,6 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS, \
                        MAXSIZE, coord_to_point
 import numpy as np
 import re
-import time
-import multiprocessing
-import mcts
 
 class GtpConnection():
 
@@ -26,7 +23,7 @@ class GtpConnection():
         ----------
         go_engine:
             a program that can reply to a set of GTP commandsbelow
-        board:
+        board: 
             Represents the current board state.
         """
         self._debug_mode = debug_mode
@@ -38,7 +35,6 @@ class GtpConnection():
             "name": self.name_cmd,
             "boardsize": self.boardsize_cmd,
             "showboard": self.showboard_cmd,
-            "timelimit": self.timelimit_cmd,
             "clear_board": self.clear_board_cmd,
             "komi": self.komi_cmd,
             "version": self.version_cmd,
@@ -46,7 +42,6 @@ class GtpConnection():
             "genmove": self.genmove_cmd,
             "list_commands": self.list_commands_cmd,
             "play": self.play_cmd,
-            "solve": self.solve_cmd,
             "legal_moves": self.legal_moves_cmd,
             "gogui-rules_game_id": self.gogui_rules_game_id_cmd,
             "gogui-rules_board_size": self.gogui_rules_board_size_cmd,
@@ -58,34 +53,28 @@ class GtpConnection():
         }
 
         # used for argument checking
-        # values: (required number of arguments,
+        # values: (required number of arguments, 
         #          error message on argnum failure)
         self.argmap = {
             "boardsize": (1, 'Usage: boardsize INT'),
-            "solve": (0, 'Usage: solve'),
-            "timelimit": (1, 'Usage: timelimit INT (1-100)'),
             "komi": (1, 'Usage: komi FLOAT'),
             "known_command": (1, 'Usage: known_command CMD_NAME'),
             "genmove": (1, 'Usage: genmove {w,b}'),
-            "play": (2, 'Usage: play {w,b} MOVE'),
+            "play": (2, 'Usage: play {b,w} MOVE'),
             "legal_moves": (1, 'Usage: legal_moves {w,b}')
         }
-
+    
     def write(self, data):
-        stdout.write(data)
+        stdout.write(data) 
 
     def flush(self):
         stdout.flush()
 
     def start_connection(self):
         """
-        Start a GTP connection.
+        Start a GTP connection. 
         This function continuously monitors standard input for commands.
         """
-        with open("test1.txt", "r") as f:
-            for line in f.read().split("\n"):
-                self.get_cmd(line)
-        return
         line = stdin.readline()
         while line:
             self.get_cmd(line)
@@ -156,7 +145,7 @@ class GtpConnection():
 
     def board2d(self):
         return str(GoBoardUtil.get_twoD_board(self.board))
-
+        
     def protocol_version_cmd(self, args):
         """ Return the GTP protocol version being used (always 2) """
         self.respond('2')
@@ -186,44 +175,6 @@ class GtpConnection():
         self.reset(int(args[0]))
         self.respond()
 
-    def timelimit_cmd(self, args):
-        """
-        Set a timelimit for genmove or solve to use. Default 1 second.
-        """
-        time_limit = int(args[0])
-        if (time_limit<1 or time_limit>100):
-            self.error('Invalid timelimit argument provided')
-        else:
-            self.time_limit = time_limit
-
-
-    def solve_cmd(self, args):
-        color = self.board.current_player
-        parent_pipe, child_pipe = multiprocessing.Pipe(True)
-        
-        from pdb import set_trace as st; st(); mcts.solve(self.board, color, child_pipe)
-        proc = multiprocessing.Process(target=mcts.solve, args=(self.board, color, child_pipe))
-        proc.start()
-        # print("Log: time_limit = ",self.time_limit)
-        proc.join(self.time_limit)
-        try:
-            proc.terminate()
-        except Exception as e:
-            pass
-        proc.join(self.time_limit)
-        res = proc.exitcode
-        if not res:
-            move = parent_pipe.recv()
-            if move:
-                formatted_point = format_point(point_to_coord(move, self.board.size))
-                self.respond("{} {}".format(color_to_string(color), formatted_point))
-            else:
-                self.respond("{}".format(color_to_string(get_opponent_color(color))))
-        else:
-            proc.terminate()
-            # process timed out
-            self.respond("unknown")
-
     def showboard_cmd(self, args):
         self.respond('\n' + self.board2d())
 
@@ -251,7 +202,8 @@ class GtpConnection():
         """
         List legal moves for color args[0] in {'b','w'}
         """
-        color = color_to_int(args[0])
+        board_color = args[0].lower()
+        color = color_to_int(board_color)
         moves = GoBoardUtil.generate_legal_moves(self.board, color)
         gtp_moves = []
         for move in moves:
@@ -295,31 +247,29 @@ class GtpConnection():
         """
         Generate a move for the color args[0] in {'b', 'w'}, for the game of gomoku.
         """
-        result = self.solve_cmd(None)
-        if not result:
-            color = color_to_int(args[0])
-            move = self.go_engine.get_move(self.board, color)
-            move_coord = point_to_coord(move, self.board.size)
-            move_as_string = format_point(move_coord)
-            if self.board.is_legal(move, color):
-                self.board.play_move(move, color)
-            #     self.respond(move_as_string)
-            # else:
-            #     self.respond("resign")
+        board_color = args[0].lower()
+        color = color_to_int(board_color)
+        move = self.go_engine.get_move(self.board, color)
+        move_coord = point_to_coord(move, self.board.size)
+        move_as_string = format_point(move_coord)
+        if self.board.is_legal(move, color):
+            self.board.play_move(move, color)
+            self.respond(move_as_string)
         else:
-            self.board.play_move(result, color)
+            self.respond("resign")
 
     def gogui_rules_game_id_cmd(self, args):
         self.respond("NoGo")
-
+    
     def gogui_rules_board_size_cmd(self, args):
         self.respond(str(self.board.size))
-
+    
     def legal_moves_cmd(self, args):
         """
             List legal moves for color args[0] in {'b','w'}
             """
-        color = color_to_int(args[0])
+        board_color = args[0].lower()
+        color = color_to_int(board_color)
         moves = GoBoardUtil.generate_legal_moves(self.board, color)
         gtp_moves = []
         for move in moves:
@@ -342,11 +292,11 @@ class GtpConnection():
             gtp_moves.append(format_point(coords))
         sorted_moves = ' '.join(sorted(gtp_moves))
         self.respond(sorted_moves)
-
+    
     def gogui_rules_side_to_move_cmd(self, args):
         color = "black" if self.board.current_player == BLACK else "white"
         self.respond(color)
-
+    
     def gogui_rules_board_cmd(self, args):
         size = self.board.size
         str = ''
@@ -364,7 +314,7 @@ class GtpConnection():
                     assert False
             str += '\n'
         self.respond(str)
-
+    
     def gogui_rules_final_result_cmd(self, args):
         empties = self.board.get_empty_points()
         color = self.board.current_player
@@ -389,7 +339,7 @@ class GtpConnection():
 
 def point_to_coord(point, boardsize):
     """
-    Transform point given as board array index
+    Transform point given as board array index 
     to (row, col) coordinate representation.
     Special case: PASS is not transformed
     """
@@ -403,15 +353,15 @@ def format_point(move):
     """
     Return move coordinates as a string such as 'a1', or 'pass'.
     """
-    #column_letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
-    column_letters = "abcdefghjklmnopqrstuvwxyz"
+    column_letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+    #column_letters = "abcdefghjklmnopqrstuvwxyz"
     if move == PASS:
         return "pass"
     row, col = move
     if not 0 <= row < MAXSIZE or not 0 <= col < MAXSIZE:
         raise ValueError
-    return column_letters[col - 1]+ str(row)
-
+    return column_letters[col - 1]+ str(row) 
+    
 def move_to_coord(point_str, board_size):
     """
     Convert a string point_str representing a point, as specified by GTP,
@@ -443,18 +393,6 @@ def move_to_coord(point_str, board_size):
 
 def color_to_int(c):
     """convert character to the appropriate integer code"""
-    color_to_int = {"b": BLACK , "w": WHITE, "e": EMPTY,
-                    "B": BLACK , "W": WHITE, "E": EMPTY,
+    color_to_int = {"b": BLACK , "w": WHITE, "e": EMPTY, 
                     "BORDER": BORDER}
-    return color_to_int[c]
-
-def color_to_string(c):
-    """convert int to the appropriate string"""
-    color_to_string = {BLACK: "b" , WHITE:"w", EMPTY:"e",
-                    BORDER:"BORDER"}
-    return color_to_string[c]
-
-def get_opponent_color(c:int):
-    return 3-c
-    """get opponent color"""
-    
+    return color_to_int[c] 

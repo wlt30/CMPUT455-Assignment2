@@ -15,8 +15,6 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
                        MAXSIZE, NULLPOINT
 
 class SimpleGoBoard(object):
-    def __str__(self):
-        return str(GoBoardUtil.get_twoD_board(self))
 
     def get_color(self, point):
         return self.board[point]
@@ -54,7 +52,7 @@ class SimpleGoBoard(object):
         """
         return where1d(self.board == EMPTY)
 
-    def __init__(self, size, timelimit=1):
+    def __init__(self, size):
         """
         Creates a Go board of given size
         """
@@ -244,7 +242,7 @@ class SimpleGoBoard(object):
             raise ValueError("occupied")
         if point == self.ko_recapture:
             return False
-
+            
         # General case: deal with captures, suicide, and next ko point
         opp_color = GoBoardUtil.opponent(color)
         in_enemy_eye = self._is_surrounded(point, opp_color)
