@@ -1,0 +1,14 @@
+Script started on Mon 24 Feb 2020 04:11:48 PM MST
+wlt@ui12:~/CMPUT455-Assignment2>cp assignment2.tgz ../temp/[K[K[Ksting/
+wlt@ui12:~/CMPUT455-Assignment2>cd ../testing/
+wlt@ui12:~/testing>tar -xf assignment2.tgz 
+wlt@ui12:~/testing>cd assignment2/
+wlt@ui12:~/testing/assignment2>ls
+Nogo.py			      board_util.py	 profile.txt	  summary.dat
+a2-sample.gtp		      gtp_connection.py  readme.txt
+assignment2-public-tests.gtp  mcts.py		 simple_board.py
+wlt@ui12:~/testing/assignment2>gogui-regress Nogo.py assignment2-public-tests.gtpp 
+wlt@ui12:~/testing/assignment2>exit
+exit
+
+Script done on Mon 24 Feb 2020 04:17:16 PM MST
