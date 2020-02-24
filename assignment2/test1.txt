@@ -1,0 +1,15 @@
+#timelimit 10
+#boardsize 3
+#genmove b
+#showboard
+#solve
+
+boardsize 4
+clear_board
+timelimit 70
+play b a4
+play w a2
+play b d1
+play w d2
+20 solve
+#?[b a1|b b1|b b3]

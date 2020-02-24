@@ -241,7 +241,8 @@ class SimpleGoBoard(object):
         if point == PASS:
             return False
         elif self.board[point] != EMPTY:
-            raise ValueError("occupied")
+            # raise ValueError("occupied")
+            return False
         if point == self.ko_recapture:
             return False
             
@@ -251,11 +252,12 @@ class SimpleGoBoard(object):
         self.board[point] = color
         single_captures = []
         neighbors = self.neighbors[point]
-        # for nb in neighbors:
-        #     if self.board[nb] == opp_color:
-        #         single_capture = self._detect_and_process_capture(nb)
-        #         if single_capture == True:
-        #             raise ValueError("capture")
+        for nb in neighbors:
+            if self.board[nb] == opp_color:
+                single_capture = self._detect_and_process_capture(nb)
+                if single_capture == True:
+                    return False
+                    # raise ValueError("capture")
         if not self._stone_has_liberty(point):
             # check suicide of whole block
             block = self._block_of(point)

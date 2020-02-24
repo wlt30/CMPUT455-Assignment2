@@ -62,11 +62,12 @@ class GtpConnection():
         #          error message on argnum failure)
         self.argmap = {
             "boardsize": (1, 'Usage: boardsize INT'),
+            "solve": (0, 'Usage: solve'),
             "timelimit": (1, 'Usage: timelimit INT (1-100)'),
             "komi": (1, 'Usage: komi FLOAT'),
             "known_command": (1, 'Usage: known_command CMD_NAME'),
             "genmove": (1, 'Usage: genmove {w,b}'),
-            "play": (2, 'Usage: play {b,w} MOVE'),
+            "play": (2, 'Usage: play {w,b} MOVE'),
             "legal_moves": (1, 'Usage: legal_moves {w,b}')
         }
 
@@ -81,10 +82,11 @@ class GtpConnection():
         Start a GTP connection.
         This function continuously monitors standard input for commands.
         """
-        with open("test1.txt", "r") as f:
-            self.get_cmd(f.readline())
-            self.get_cmd(f.readline())
-            self.get_cmd(f.readline())
+        # with open("test1.txt", "r") as f:
+        #     self.get_cmd(f.readline())
+        #     self.get_cmd(f.readline())
+        #     self.get_cmd(f.readline())
+        # return
         line = stdin.readline()
         while line:
             self.get_cmd(line)
@@ -197,28 +199,27 @@ class GtpConnection():
 
 
     def solve_cmd(self, args):
-        color = color_to_int(args[0])
+        color = self.board.current_player
         parent_pipe, child_pipe = multiprocessing.Pipe(True)
         
-        from pdb import set_trace as st; st(); mcts.solve(self.board, color, child_pipe)
+        # from pdb import set_trace as st; st(); mcts.solve(self.board, color, child_pipe)
         proc = multiprocessing.Process(target=mcts.solve, args=(self.board, color, child_pipe))
         proc.start()
         # print("Log: time_limit = ",self.time_limit)
-        # proc.join(self.time_limit)
-        # try:
-        #     proc.terminate()
-        # except Exception as e:
-        #     print(e)
-        #     pass
+        proc.join(self.time_limit)
+        try:
+            proc.terminate()
+        except Exception as e:
+            pass
         proc.join(self.time_limit)
         res = proc.exitcode
-        print("res = ", res)
         if not res:
             move = parent_pipe.recv()
             if move:
-                self.respond("{} {}".format(color, move))
+                formatted_point = format_point(point_to_coord(move, self.board.size))
+                self.respond("{} {}".format(color_to_string(color), formatted_point))
             else:
-                self.respond("{}".format(get_opponent_color(color)))
+                self.respond("{}".format(color_to_string(get_opponent_color(color))))
         else:
             proc.terminate()
             # process timed out
@@ -295,7 +296,7 @@ class GtpConnection():
         """
         Generate a move for the color args[0] in {'b', 'w'}, for the game of gomoku.
         """
-        result = self.solve_cmd(args)
+        result = self.solve_cmd(None)
         if not result:
             color = color_to_int(args[0])
             move = self.go_engine.get_move(self.board, color)
@@ -403,8 +404,8 @@ def format_point(move):
     """
     Return move coordinates as a string such as 'a1', or 'pass'.
     """
-    column_letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
-    #column_letters = "abcdefghjklmnopqrstuvwxyz"
+    #column_letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+    column_letters = "abcdefghjklmnopqrstuvwxyz"
     if move == PASS:
         return "pass"
     row, col = move
@@ -447,6 +448,12 @@ def color_to_int(c):
                     "B": BLACK , "W": WHITE, "E": EMPTY,
                     "BORDER": BORDER}
     return color_to_int[c]
+
+def color_to_string(c):
+    """convert int to the appropriate string"""
+    color_to_string = {BLACK: "b" , WHITE:"w", EMPTY:"e",
+                    BORDER:"BORDER"}
+    return color_to_string[c]
 
 def get_opponent_color(c:int):
     return 3-c
