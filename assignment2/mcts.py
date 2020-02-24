@@ -1,7 +1,6 @@
 from random import shuffle
 import gtp_connection as gtp
 
-solve_path = []
 
 def solve(board, color, pipe):
     """
@@ -32,3 +31,11 @@ def or_node(board, color):
             if and_node(new_board,gtp.get_opponent_color(color)):
                 return True
     return False
+
+def doMove(board, move, color):
+    board.board[move] = color
+    board.current_player = gtp.get_opponent_color(color)
+
+def undoMove(board,move,color):
+    board.board[move] = 0
+    board.current_player = color

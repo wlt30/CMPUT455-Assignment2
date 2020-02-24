@@ -196,33 +196,35 @@ class GtpConnection():
         else:
             self.time_limit = time_limit
 
-
-    def solve_cmd(self, args):
+    def solve_cmd(self, args, p=1):
         color = self.board.current_player
         parent_pipe, child_pipe = multiprocessing.Pipe(True)
         
-        from pdb import set_trace as st; st(); mcts.solve(self.board, color, child_pipe)
+        # from pdb import set_trace as st; st(); mcts.solve(self.board, color, child_pipe)
         proc = multiprocessing.Process(target=mcts.solve, args=(self.board, color, child_pipe))
         proc.start()
-        # print("Log: time_limit = ",self.time_limit)
         proc.join(self.time_limit)
         try:
             proc.terminate()
         except Exception as e:
             pass
         proc.join(self.time_limit)
-        res = proc.exitcode
-        if not res:
+        if not proc.exitcode:
             move = parent_pipe.recv()
             if move:
                 formatted_point = format_point(point_to_coord(move, self.board.size))
-                self.respond("{} {}".format(color_to_string(color), formatted_point))
+                if p:
+                    self.respond("{} {}".format(color_to_string(color), formatted_point))
+                return move
             else:
-                self.respond("{}".format(color_to_string(get_opponent_color(color))))
+                if p:
+                    self.respond("{}".format(color_to_string(get_opponent_color(color))))
+            
         else:
             proc.terminate()
             # process timed out
-            self.respond("unknown")
+            if p:
+                self.respond("unknown")
 
     def showboard_cmd(self, args):
         self.respond('\n' + self.board2d())
@@ -287,7 +289,7 @@ class GtpConnection():
             else:
                 self.debug_msg("Move: {}\nBoard:\n{}\n".
                                 format(board_move, self.board2d()))
-            self.respond()
+            # self.respond()
         except Exception as e:
             self.respond('illegal move: \"{} {}\" {}'.format(args[0], args[1], str(e)))
 
@@ -295,19 +297,20 @@ class GtpConnection():
         """
         Generate a move for the color args[0] in {'b', 'w'}, for the game of gomoku.
         """
-        result = self.solve_cmd(None)
+        result = self.solve_cmd(None,0)
         if not result:
             color = color_to_int(args[0])
             move = self.go_engine.get_move(self.board, color)
             move_coord = point_to_coord(move, self.board.size)
             move_as_string = format_point(move_coord)
             if self.board.is_legal(move, color):
-                self.board.play_move(move, color)
-            #     self.respond(move_as_string)
-            # else:
-            #     self.respond("resign")
+                # self.board.play_move(move, color)
+                self.respond(move_as_string)
+            else:
+                self.respond("resign")
         else:
-            self.board.play_move(result, color)
+            # self.board.play_move(result, color)
+            self.respond(format_point(result))
 
     def gogui_rules_game_id_cmd(self, args):
         self.respond("NoGo")
